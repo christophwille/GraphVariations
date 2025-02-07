@@ -7,6 +7,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GraphSdkSamples", "GraphSdk
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GraphVariations.Common", "GraphVariations.Common\GraphVariations.Common.csproj", "{24466076-448D-4763-932D-0D38CF722680}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NoBackingStore.Graph", "NoBackingStore.Graph\NoBackingStore.Graph.csproj", "{6D4C5F32-0A61-4F99-9742-92346371AF99}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GraphCustomSamples", "GraphCustomSamples\GraphCustomSamples.csproj", "{2600CB0C-B1B5-4FF3-BA6E-CAE8A1FDDD41}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +25,14 @@ Global
 		{24466076-448D-4763-932D-0D38CF722680}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{24466076-448D-4763-932D-0D38CF722680}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{24466076-448D-4763-932D-0D38CF722680}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6D4C5F32-0A61-4F99-9742-92346371AF99}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6D4C5F32-0A61-4F99-9742-92346371AF99}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6D4C5F32-0A61-4F99-9742-92346371AF99}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6D4C5F32-0A61-4F99-9742-92346371AF99}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2600CB0C-B1B5-4FF3-BA6E-CAE8A1FDDD41}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2600CB0C-B1B5-4FF3-BA6E-CAE8A1FDDD41}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2600CB0C-B1B5-4FF3-BA6E-CAE8A1FDDD41}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2600CB0C-B1B5-4FF3-BA6E-CAE8A1FDDD41}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
