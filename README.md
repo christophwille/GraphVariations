@@ -1,9 +1,11 @@
 # Graph Variations - Paging with / without SDK / custom SDK
 
-* PageIterator (GraphSdkSamples)
-* OdataNextLink (GraphSdkSamples)
-* ToGetRequestInformation / RequestAdapter.SendAsync (GraphSdkSamples)
-* Custom SDK (see below for generation, GraphCustomSamples)
+* PageIterator as per docs, but generic (GraphSdkSamples-PageViaIteratorAsync)
+* OdataNextLink as per docs, but generic (GraphSdkSamples-PageViaOdataLinkAsync)
+* ToGetRequestInformation / RequestAdapter.SendAsync (GraphSdkSamples-PageViaRequestInformationAsync)
+* ConvertToNativeRequestAsync with custom models to side-step backing store (GraphSdkSamples-PageNativeRequestCustomModelsAsync)
+* Custom SDK generated without backing store (see below for generation, GraphCustomSamples-PageCustomSdkAsync)
+* Naked REST with custom models and simple REST (GraphCustomSamples-PageNakedRestAsync)
 
 
 ## Custom SDK
