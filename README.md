@@ -6,7 +6,7 @@
 * ConvertToNativeRequestAsync with custom models to side-step backing store (GraphSdkSamples-PageNativeRequestCustomModelsAsync)
 * Custom SDK generated without backing store (see below for generation, GraphCustomSamples-PageCustomSdkAsync)
 * Naked REST with custom models and simple REST (GraphCustomSamples-PageNakedRestAsync)
-
+* Simple.OData.Client, just for fun though (GraphCustomSamples-PageSimpleODataClientAsync)
 
 ## Custom SDK
 

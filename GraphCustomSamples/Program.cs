@@ -6,6 +6,7 @@ using Microsoft.Kiota.Authentication.Azure;
 using Microsoft.Kiota.Http.HttpClientLibrary;
 using NoBackingStore.Graph;
 using NoBackingStore.Graph.Models;
+using Simple.OData.Client;
 using System.Net.Http.Headers;
 using System.Text.Json;
 
@@ -25,8 +26,12 @@ var (tenantId, clientId, clientSecret) = (
 //Console.WriteLine($"Done Custom SDK. {resultCustomSdk.Entities.Count} entities and {resultCustomSdk.PageRequests} page requests issued");
 
 // #2 - Naked REST (without resilience, yes)
-var resultNakedRest = await PageNakedRestAsync();
-Console.WriteLine($"Done naked REST. {resultNakedRest.Entities.Count} entities and {resultNakedRest.PageRequests} page requests issued");
+//var resultNakedRest = await PageNakedRestAsync();
+//Console.WriteLine($"Done naked REST. {resultNakedRest.Entities.Count} entities and {resultNakedRest.PageRequests} page requests issued");
+
+// #3 - Simple.OData.Client
+var resultSimpleODataClient = await PageSimpleODataClientAsync();
+Console.WriteLine($"Done Simple.OData.Client. {resultSimpleODataClient.Entities.Count}");
 
 Console.WriteLine("Program ended");
 
@@ -68,10 +73,8 @@ async Task<PagedRequestResponse<User>> PageCustomSdkAsync()
     return new(users, pageRequests);
 }
 
-async Task<PagedRequestResponse<GraphVariations.Common.RestModels.User>> PageNakedRestAsync()
+async Task<string> GetAuthTokenViaMSAL()
 {
-    List<GraphVariations.Common.RestModels.User> users = new();
-
     // This is standard MSAL
     var cca = ConfidentialClientApplicationBuilder
         .Create(clientId)
@@ -81,13 +84,22 @@ async Task<PagedRequestResponse<GraphVariations.Common.RestModels.User>> PageNak
 
     var authResult = await cca.AcquireTokenForClient(new string[] { "https://graph.microsoft.com/.default" }).ExecuteAsync();
 
+    return authResult.AccessToken;
+}
+
+async Task<PagedRequestResponse<GraphVariations.Common.RestModels.User>> PageNakedRestAsync()
+{
+    List<GraphVariations.Common.RestModels.User> users = new();
+
+    var token = await GetAuthTokenViaMSAL();
+
     string pageRequest = $"https://graph.microsoft.com/v1.0/users?$top=10";
     int pageRequests = -1;
 
     // Yes, I know. But this is demo-ware. If you want to do it right, see:
     // https://learn.microsoft.com/en-us/dotnet/fundamentals/networking/http/httpclient-guidelines#recommended-use
     var client = new System.Net.Http.HttpClient();
-    client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", authResult.AccessToken);
+    client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
     do
     {
@@ -104,4 +116,28 @@ async Task<PagedRequestResponse<GraphVariations.Common.RestModels.User>> PageNak
     } while (pageRequest != null);
 
     return new(users, pageRequests);
+}
+
+async Task<PagedRequestResponse<GraphVariations.Common.RestModels.User>> PageSimpleODataClientAsync()
+{
+    var token = await GetAuthTokenViaMSAL();
+
+    var client = new ODataClient(new ODataClientSettings(new Uri("https://graph.microsoft.com/v1.0/"))
+    {
+        OnTrace = (x, y) => Console.WriteLine(string.Format(x, y)),
+        BeforeRequest = (message) => message.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token),
+        // MetadataDocument = "../../../metadata.xml" // we'd need the OData document from https://graph.microsoft.com/v1.0/$metadata
+    });
+
+    // More Simple.OData.Client samples (for Exchange) can be found at 
+    // https://github.com/christophwille/talkingtoexorestapi/blob/f3c5a8adfac4f8f1a6a3b5cf4f752a8f5e4f3ec5/src/GetMailBoxDemo/Program.cs#L74
+    var annotations = new ODataFeedAnnotations();
+    var users = (await client.For<GraphVariations.Common.RestModels.User>().FindEntriesAsync(annotations)).ToList();
+
+    while (annotations.NextPageLink != null)
+    {
+        users.AddRange(await client.For<GraphVariations.Common.RestModels.User>().FindEntriesAsync(annotations.NextPageLink, annotations));
+    }
+
+    return new(users);
 }
