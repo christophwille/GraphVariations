@@ -5,6 +5,7 @@ using Microsoft.Graph;
 using Microsoft.Graph.Models;
 using Microsoft.Kiota.Abstractions;
 using Microsoft.Kiota.Abstractions.Serialization;
+using System.Text.Json;
 
 var builder = new ConfigurationBuilder()
     .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
@@ -33,15 +34,15 @@ var graphClient = new GraphServiceClient(clientSecretCredential, scopes);
 const int pageSize = 10;
 
 // # 1 - simply give me whatever fits in one reponse
-var resultSingleCall = await graphClient.Users.GetAsync();
-Console.WriteLine($"Done simple. {resultSingleCall.Value.Count} entities");
+//var resultSingleCall = await graphClient.Users.GetAsync();
+//Console.WriteLine($"Done simple. {resultSingleCall.Value.Count} entities");
 
 // #2 - use the standard iterator pattern from https://learn.microsoft.com/en-us/graph/sdks/paging?tabs=csharp
-var resultIterator = await PageViaIteratorAsync<User, UserCollectionResponse>(() => graphClient.Users.GetAsync(requestConfiguration =>
-{
-    requestConfiguration.QueryParameters.Top = pageSize;
-}));
-Console.WriteLine($"Done iterator. {resultIterator.Entities.Count} entities and {resultIterator.PageRequests} page requests issued");
+//var resultIterator = await PageViaIteratorAsync<User, UserCollectionResponse>(() => graphClient.Users.GetAsync(requestConfiguration =>
+//{
+//    requestConfiguration.QueryParameters.Top = pageSize;
+//}));
+//Console.WriteLine($"Done iterator. {resultIterator.Entities.Count} entities and {resultIterator.PageRequests} page requests issued");
 
 // #3 - OdataNextLink. Generic variant of https://learn.microsoft.com/en-us/graph/sdks/paging?tabs=csharp#manually-requesting-subsequent-pages
 //var resultOdataLink = await PageViaOdataLinkAsync<User, UserCollectionResponse>(
@@ -53,18 +54,26 @@ Console.WriteLine($"Done iterator. {resultIterator.Entities.Count} entities and 
 //Console.WriteLine($"Done OdataNextLink. {resultOdataLink.Entities.Count} entities and {resultOdataLink.PageRequests} page requests issued");
 
 // #4 -RequestInformation
-//var requestInfo = graphClient.Users.ToGetRequestInformation(requestConfiguration =>
+////var requestInfo = graphClient.Users.ToGetRequestInformation(requestConfiguration =>
+////            {
+////                requestConfiguration.QueryParameters.Top = pageSize;
+////            });
+////var user = await graphClient.RequestAdapter.SendAsync(requestInfo, UserCollectionResponse.CreateFromDiscriminatorValue);
+//var resultRequestInfo = await PageViaRequestInformationAsync<User, UserCollectionResponse>(
+//            graphClient.Users.ToGetRequestInformation(requestConfiguration =>
 //            {
 //                requestConfiguration.QueryParameters.Top = pageSize;
-//            });
-//var user = await graphClient.RequestAdapter.SendAsync(requestInfo, UserCollectionResponse.CreateFromDiscriminatorValue);
-var resultRequestInfo = await PageViaRequestInformationAsync<User, UserCollectionResponse>(
-            graphClient.Users.ToGetRequestInformation(requestConfiguration =>
-            {
-                requestConfiguration.QueryParameters.Top = pageSize;
-            }),
-            UserCollectionResponse.CreateFromDiscriminatorValue);
-Console.WriteLine($"Done RequestInformation. {resultRequestInfo.Entities.Count} entities and {resultRequestInfo.PageRequests} page requests issued");
+//            }),
+//            UserCollectionResponse.CreateFromDiscriminatorValue);
+//Console.WriteLine($"Done RequestInformation. {resultRequestInfo.Entities.Count} entities and {resultRequestInfo.PageRequests} page requests issued");
+
+// #5 - RequestInformation, but using ConvertToNativeRequestAsync & custom models (side-step backing store that way)
+var resultNativeRequest = await PageNativeRequestCustomModelsAsync(graphClient.Users.ToGetRequestInformation(requestConfiguration =>
+{
+    requestConfiguration.QueryParameters.Top = pageSize;
+}));
+Console.WriteLine($"Done RequestInformation. {resultNativeRequest.Entities.Count} entities and {resultNativeRequest.PageRequests} page requests issued");
+
 
 Console.WriteLine("Program ended");
 
@@ -153,4 +162,30 @@ async Task<PagedRequestResponse<TEntity>> PageViaRequestInformationAsync<TEntity
     }
 
     return new(retval, pageRequests);
+}
+
+async Task<PagedRequestResponse<GraphVariations.Common.RestModels.User>> PageNativeRequestCustomModelsAsync(RequestInformation requestInfo)
+{
+    // Yes, I know. But this is demo-ware. If you want to do it right, see:
+    // https://learn.microsoft.com/en-us/dotnet/fundamentals/networking/http/httpclient-guidelines#recommended-use
+    var client = new System.Net.Http.HttpClient();
+    string? pageRequest = null;
+
+    using (var httpRequest = await graphClient.RequestAdapter.ConvertToNativeRequestAsync<System.Net.Http.HttpRequestMessage>(requestInfo))
+    {
+        using (var httpResponse = await client.SendAsync(httpRequest))
+        {
+            httpResponse.EnsureSuccessStatusCode();
+
+            var responseString = await httpResponse.Content.ReadAsStringAsync();
+            var page = JsonSerializer.Deserialize<GraphVariations.Common.RestModels.UserApiResponse>(responseString);
+
+            pageRequest = page.NextLink;
+        }
+    }
+
+    // TODO: Perform actual paging. This is only page #1 here.
+    // TODO: Make generic like everything else
+
+    return new(new());
 }
