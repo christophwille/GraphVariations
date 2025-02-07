@@ -166,26 +166,42 @@ async Task<PagedRequestResponse<TEntity>> PageViaRequestInformationAsync<TEntity
 
 async Task<PagedRequestResponse<GraphVariations.Common.RestModels.User>> PageNativeRequestCustomModelsAsync(RequestInformation requestInfo)
 {
+    List<GraphVariations.Common.RestModels.User> retval = new();
+
     // Yes, I know. But this is demo-ware. If you want to do it right, see:
     // https://learn.microsoft.com/en-us/dotnet/fundamentals/networking/http/httpclient-guidelines#recommended-use
     var client = new System.Net.Http.HttpClient();
     string? pageRequest = null;
+    int pageRequests = -1;
 
-    using (var httpRequest = await graphClient.RequestAdapter.ConvertToNativeRequestAsync<System.Net.Http.HttpRequestMessage>(requestInfo))
+    while (requestInfo != null)
     {
-        using (var httpResponse = await client.SendAsync(httpRequest))
+        using (var httpRequest = await graphClient.RequestAdapter.ConvertToNativeRequestAsync<System.Net.Http.HttpRequestMessage>(requestInfo))
         {
-            httpResponse.EnsureSuccessStatusCode();
+            using (var httpResponse = await client.SendAsync(httpRequest))
+            {
+                httpResponse.EnsureSuccessStatusCode();
 
-            var responseString = await httpResponse.Content.ReadAsStringAsync();
-            var page = JsonSerializer.Deserialize<GraphVariations.Common.RestModels.UserApiResponse>(responseString);
+                var responseString = await httpResponse.Content.ReadAsStringAsync();
+                var page = JsonSerializer.Deserialize<GraphVariations.Common.RestModels.UserApiResponse>(responseString);
 
-            pageRequest = page.NextLink;
+                retval.AddRange(page.Value);
+
+                pageRequest = page.NextLink;
+                pageRequests++;
+            }
+        }
+
+        if (pageRequest != null)
+        {
+            requestInfo.URI = new Uri(pageRequest);
+        }
+        else
+        {
+            requestInfo = null;
+            pageRequest = null;
         }
     }
 
-    // TODO: Perform actual paging. This is only page #1 here.
-    // TODO: Make generic like everything else
-
-    return new(new());
+    return new(retval, pageRequests);
 }
