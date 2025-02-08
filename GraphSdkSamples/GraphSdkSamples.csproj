@@ -12,6 +12,7 @@
 	<PackageReference Include="Microsoft.Extensions.Configuration" Version="8.0.0" />
 	<PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="8.0.1" />
 	<PackageReference Include="Microsoft.Graph" Version="5.69.0" />
+	<PackageReference Include="Riok.Mapperly" Version="4.1.1" />
   </ItemGroup>
 
   <ItemGroup>

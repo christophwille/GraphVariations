@@ -1,4 +1,5 @@
 ﻿using Azure.Identity;
+using GraphSdkSamples;
 using GraphVariations.Common;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Graph;
@@ -38,11 +39,14 @@ const int pageSize = 10;
 //Console.WriteLine($"Done simple. {resultSingleCall.Value.Count} entities");
 
 // #2 - use the standard iterator pattern from https://learn.microsoft.com/en-us/graph/sdks/paging?tabs=csharp
-//var resultIterator = await PageViaIteratorAsync<User, UserCollectionResponse>(() => graphClient.Users.GetAsync(requestConfiguration =>
-//{
-//    requestConfiguration.QueryParameters.Top = pageSize;
-//}));
-//Console.WriteLine($"Done iterator. {resultIterator.Entities.Count} entities and {resultIterator.PageRequests} page requests issued");
+var resultIterator = await PageViaIteratorAsync<User, UserCollectionResponse>(() => graphClient.Users.GetAsync(requestConfiguration =>
+{
+    requestConfiguration.QueryParameters.Top = pageSize;
+}));
+Console.WriteLine($"Done iterator. {resultIterator.Entities.Count} entities and {resultIterator.PageRequests} page requests issued");
+
+var mapper = new GraphUserToUserModelMapper();
+resultIterator.Entities.Select(mapper.UserToUserDto).ToList().ForEach(u => Console.WriteLine(u.UserPrincipalName));
 
 // #3 - OdataNextLink. Generic variant of https://learn.microsoft.com/en-us/graph/sdks/paging?tabs=csharp#manually-requesting-subsequent-pages
 //var resultOdataLink = await PageViaOdataLinkAsync<User, UserCollectionResponse>(
@@ -68,11 +72,11 @@ const int pageSize = 10;
 //Console.WriteLine($"Done RequestInformation. {resultRequestInfo.Entities.Count} entities and {resultRequestInfo.PageRequests} page requests issued");
 
 // #5 - RequestInformation, but using ConvertToNativeRequestAsync & custom models (side-step backing store that way)
-var resultNativeRequest = await PageNativeRequestCustomModelsAsync(graphClient.Users.ToGetRequestInformation(requestConfiguration =>
-{
-    requestConfiguration.QueryParameters.Top = pageSize;
-}));
-Console.WriteLine($"Done RequestInformation. {resultNativeRequest.Entities.Count} entities and {resultNativeRequest.PageRequests} page requests issued");
+//var resultNativeRequest = await PageNativeRequestCustomModelsAsync(graphClient.Users.ToGetRequestInformation(requestConfiguration =>
+//{
+//    requestConfiguration.QueryParameters.Top = pageSize;
+//}));
+//Console.WriteLine($"Done RequestInformation. {resultNativeRequest.Entities.Count} entities and {resultNativeRequest.PageRequests} page requests issued");
 
 
 Console.WriteLine("Program ended");

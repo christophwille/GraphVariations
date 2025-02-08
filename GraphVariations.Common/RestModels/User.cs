@@ -76,7 +76,7 @@ namespace GraphVariations.Common.RestModels
     public class AssignedPlan
     {
         [JsonPropertyName("assignedDateTime")]
-        public DateTime AssignedDateTime { get; set; }
+        public System.DateTimeOffset? AssignedDateTime { get; set; }
         [JsonPropertyName("capabilityStatus")]
         public string CapabilityStatus { get; set; }
         [JsonPropertyName("service")]
